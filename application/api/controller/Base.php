@@ -20,6 +20,50 @@ class Base extends Controller {
     ]);
   }
 
+  protected function formatLoginData($status, $currentAuthority, $type, $message = null) {
+    return json_encode([
+      'status' => $status,
+      'currentAuthority' => $currentAuthority,
+      'type' => $type,
+      'message' => $message
+    ]);
+  }
+
+  public function backLogin() {
+    $user_no = request()->param('userName');
+    $psw = request()->param('password');
+    $type = request()->param('type');
+    if (empty($user_no) || empty($psw)) {
+      return $this->formatLoginData('error', 'guest', $type, '账号或密码不能为空！');
+    } else {
+      $user_info = Db::table('user')->where('user_no', $user_no)->find();
+      if (empty($user_info)) {
+        return $this->formatLoginData('error', 'guest', $type, '账号不存在！');
+      } else {
+        if (sha1($psw) != $user_info['psw']) {
+          return $this->formatLoginData('error', 'guest', $type, '密码错误！');
+        } else {
+          Session::set('user_no', $user_info['user_no']);
+          return json_encode([
+            'status' => 'ok',
+            'currentAuthority' => $user_info['auth'],
+            'type' => $type,
+            'message' => '登录成功！'
+          ]);
+        }
+      }
+    }
+  }
+
+  public function jon() {
+    $users = Db::table('user')->select();
+    foreach ($users as $key => $value) {
+      Db::table('user')->where('id', $value['id'])->update([
+        'psw' => sha1($value['psw'])
+      ]);
+    }
+  }
+
   public function getAreas() {
     $data = Db::table('areas')->select();
     return $this->formatData('ok', $data);

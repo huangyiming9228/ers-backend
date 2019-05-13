@@ -31,7 +31,7 @@ class Login extends Controller {
           ];
           return json_encode($data);
         } else {
-          if ($psw != $user_info['psw']) {
+          if (sha1($psw) != $user_info['psw']) {
             $data = [
               'data' => null,
               'message' => '密码错误！',
