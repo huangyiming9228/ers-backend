@@ -55,6 +55,48 @@ class Base extends Controller {
     }
   }
 
+  public function getCurrentUser() {
+    $user_no = Session::get('user_no');
+    $user_info = Db::table('user')->where('user_no', $user_no)->find();
+    return json_encode([
+      'userid' => $user_info['id'],
+      'name' => $user_info['user_name'],
+      'no' => $user_info['user_no'],
+      'tel' => $user_info['tel'],
+      'avatar' => 'https://gw.alipayobjects.com/zos/antfincdn/XAosXuNZyF/BiazfanxmamNRoxxVxka.png',
+      'email' => $user_info['email'],
+      'profile' => $user_info['profile'],
+    ]);
+  }
+
+  public function updateUserInfo() {
+    $params = request()->param();
+    $update_success = Db::table('user')->where('id', $params['userid'])->update([
+      'tel' => $params['tel'],
+      'email' => $params['email'],
+      'profile' => $params['profile'],
+    ]);
+    return $this->formatData('ok', $params, '更新成功！');
+    // if ($update_success) {
+    //   return $this->formatData('ok', $params, '更新成功！');
+    // } else {
+    //   return $this->formatData('error', $params, '更新失败！');
+    // }
+  }
+
+  public function updatePassword() {
+    $params = request()->param();
+    $old_psw = Db::table('user')->where('user_no', Session::get('user_no'))->value('psw');
+    if (sha1($params['oldPassword']) != $old_psw) {
+      return $this->formatData('error', null, '原密码错误，修改失败！');
+    } else {
+      Db::table('user')->where('user_no', Session::get('user_no'))->update([
+        'psw' => sha1($params['newPassword1'])
+      ]);
+      return $this->formatData('ok', null, '修改成功！');
+    }
+  }
+
   public function jon() {
     $users = Db::table('user')->select();
     foreach ($users as $key => $value) {
