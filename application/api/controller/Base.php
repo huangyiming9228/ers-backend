@@ -110,6 +110,7 @@ class Base extends Controller {
     $data = Db::table('areas')->select();
     foreach ($data as $key => $value) {
       $data[$key]['user_name'] = Db::table('user')->where('user_no', $value['user_no'])->value('user_name');
+      $data[$key]['room_count'] = Db::table('rooms')->where('area_id', $value['id'])->count();
     }
     return $this->formatData('ok', $data);
   }
@@ -185,6 +186,61 @@ class Base extends Controller {
       Db::table('areas')->where('id', $value)->update(['user_no' => $user_no]);
     }
     return $this->formatData('ok', null);
+  }
+
+  public function addArea() {
+    $params = request()->param();
+    $is_exist = Db::table('areas')->where('area_name', $params['area_name'])->find();
+    if ($is_exist) {
+      return $this->formatData('error', null, '新增失败，已存在相同名称的区域！');
+    } else {
+      $flag = Db::table('areas')->insert([
+        'area_name' => $params['area_name'],
+        'user_no' => $params['user_no'],
+      ]);
+      if ($flag) {
+        return $this->formatData('ok', null, '新增成功！');
+      } else {
+        return $this->formatData('error', null, '新增失败！');
+      }
+    }
+  }
+
+  public function deleteArea($area_id) {
+    $flag = Db::table('areas')->where('id', $area_id)->delete();
+    if ($flag) {
+      return $this->formatData('ok', null, '删除成功！');
+    } else {
+      return $this->formatData('error', null, '删除失败！');
+    }
+  }
+
+  public function addRoom() {
+    $params = request()->param();
+    $is_exist = Db::table('rooms')->where('area_id', $params['area_id'])->where('room_name', $params['room_name'])->find();
+    if ($is_exist) {
+      return $this->formatData('error', null, '新增失败，此区域已存在相同名称的教室！');
+    } else {
+      $flag = Db::table('rooms')->insert([
+        'room_name' => $params['room_name'],
+        'area_id' => $params['area_id'],
+        'user_no' => $params['user_no'],
+      ]);
+      if ($flag) {
+        return $this->formatData('ok', null, '新增成功！');
+      } else {
+        return $this->formatData('error', null, '新增失败！');
+      }
+    }
+  }
+
+  public function deleteRoom($room_id) {
+    $flag = Db::table('rooms')->where('id', $room_id)->delete();
+    if ($flag) {
+      return $this->formatData('ok', null, '删除成功！');
+    } else {
+      return $this->formatData('error', null, '删除失败！');
+    }
   }
 
 }
