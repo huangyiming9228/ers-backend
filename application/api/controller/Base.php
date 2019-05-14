@@ -108,11 +108,17 @@ class Base extends Controller {
 
   public function getAreas() {
     $data = Db::table('areas')->select();
+    foreach ($data as $key => $value) {
+      $data[$key]['user_name'] = Db::table('user')->where('user_no', $value['user_no'])->value('user_name');
+    }
     return $this->formatData('ok', $data);
   }
 
   public function getRooms($id) {
     $data = Db::table('rooms')->where('area_id', $id)->select();
+    foreach ($data as $key => $value) {
+      $data[$key]['user_name'] = Db::table('user')->where('user_no', $value['user_no'])->value('user_name');
+    }
     return $this->formatData('ok', $data);
   }
 
@@ -154,6 +160,21 @@ class Base extends Controller {
       'room_id' => $params['room_id']
     ]);
     return $this->formatData('ok', 'success');
+  }
+
+  public function getUsers() {
+    $data = Db::table('user')->field('user_no,user_name,auth_name')->select();
+    return $this->formatData('ok', $data);
+  }
+
+  public function updateRoomUser() {
+    $params = request()->param();
+    $rooms = $params['keys'];
+    $user_no = $params['user_no'];
+    foreach ($rooms as $key => $value) {
+      Db::table('rooms')->where('id', $value)->update(['user_no' => $user_no]);
+    }
+    return $this->formatData('ok', null);
   }
 
 }
