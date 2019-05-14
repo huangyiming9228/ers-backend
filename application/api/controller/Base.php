@@ -177,4 +177,14 @@ class Base extends Controller {
     return $this->formatData('ok', null);
   }
 
+  public function updateAreaUser() {
+    $params = request()->param();
+    $rooms = $params['keys'];
+    $user_no = $params['user_no'];
+    foreach ($rooms as $key => $value) {
+      Db::table('areas')->where('id', $value)->update(['user_no' => $user_no]);
+    }
+    return $this->formatData('ok', null);
+  }
+
 }
