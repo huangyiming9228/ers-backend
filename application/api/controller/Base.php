@@ -243,4 +243,44 @@ class Base extends Controller {
     }
   }
 
+  public function queryUsers() {
+    $params = request()->param();
+    $conditions = [];
+    if ($params['user_name']) $conditions['user_name'] = $params['user_name'];
+    if ($params['user_no']) $conditions['user_no'] = $params['user_no'];
+    $data = Db::table('user')->where($conditions)->select();
+    return $this->formatData('ok', $data);
+  }
+
+  public function addUser() {
+    $params = request()->param();
+    $is_exist = Db::table('user')->where('user_no', $params['user_no'])->find();
+    if ($is_exist) {
+      return $this->formatData('error', null, '新增失败，此员工号已存在！');
+    } else {
+      $flag = Db::table('user')->insert($params);
+      if ($flag) {
+        return $this->formatData('ok', null, '新增成功！');
+      } else {
+        return $this->formatData('error', null, '服务器错误，新增失败！');
+      }
+    }
+  }
+
+  public function deleteUser() {
+    $params = request()->param();
+    $flag = Db::table('user')->where('user_no', $params['user_no'])->delete();
+    if ($flag) {
+      return $this->formatData('ok', null, '删除成功！');
+    } else {
+      return $this->formatData('error', null, '服务器错误，删除失败！');
+    }
+  }
+
+  public function updateUser() {
+    $params = request()->param();
+    $flag = Db::table('user')->where('user_no', $params['user_no'])->update($params);
+    return $this->formatData('ok', null, '更新成功！');
+  }
+
 }
