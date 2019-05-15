@@ -44,6 +44,7 @@ class Base extends Controller {
           return $this->formatLoginData('error', 'guest', $type, '密码错误！');
         } else {
           Session::set('user_no', $user_info['user_no']);
+          Session::set('user_auth', $user_info['auth']);
           return json_encode([
             'status' => 'ok',
             'currentAuthority' => $user_info['auth'],
@@ -66,6 +67,8 @@ class Base extends Controller {
       'avatar' => 'https://gw.alipayobjects.com/zos/antfincdn/XAosXuNZyF/BiazfanxmamNRoxxVxka.png',
       'email' => $user_info['email'],
       'profile' => $user_info['profile'],
+      'auth' => $user_info['auth'],
+      'auth_name' => $user_info['auth_name'],
     ]);
   }
 
@@ -107,7 +110,17 @@ class Base extends Controller {
   }
 
   public function getAreas() {
-    $data = Db::table('areas')->select();
+    $user_no = Session::get('user_no');
+    $auth = Session::get('user_auth');
+    if ($auth == 'room_admin') {
+      $all_area_id = Db::table('rooms')->where('user_no', $user_no)->column('area_id');
+      array_unique($all_area_id);
+      $data = Db::table('areas')->where('id', 'in', $all_area_id)->select();
+    } else if ($auth == 'area_admin') {
+      $data = Db::table('areas')->where('user_no', $user_no)->select();
+    } else {
+      $data = Db::table('areas')->select();
+    }
     foreach ($data as $key => $value) {
       $data[$key]['user_name'] = Db::table('user')->where('user_no', $value['user_no'])->value('user_name');
       $data[$key]['room_count'] = Db::table('rooms')->where('area_id', $value['id'])->count();
@@ -116,7 +129,13 @@ class Base extends Controller {
   }
 
   public function getRooms($id) {
-    $data = Db::table('rooms')->where('area_id', $id)->select();
+    $user_no = Session::get('user_no');
+    $auth = Session::get('user_auth');
+    if ($auth == 'room_admin') {
+      $data = Db::table('rooms')->where('area_id', $id)->where('user_no', $user_no)->select();
+    } else {
+      $data = Db::table('rooms')->where('area_id', $id)->select();
+    }
     foreach ($data as $key => $value) {
       $data[$key]['user_name'] = Db::table('user')->where('user_no', $value['user_no'])->value('user_name');
     }
@@ -281,6 +300,45 @@ class Base extends Controller {
     $params = request()->param();
     $flag = Db::table('user')->where('user_no', $params['user_no'])->update($params);
     return $this->formatData('ok', null, '更新成功！');
+  }
+
+  public function getRoomUsers() {
+    $data = Db::table('user')->where('auth', 'room_admin')->field('user_no,user_name,auth_name')->select();
+    return $this->formatData('ok', $data);
+  }
+
+  public function getAreaUsers() {
+    $data = Db::table('user')->where('auth', 'area_admin')->field('user_no,user_name,auth_name')->select();
+    return $this->formatData('ok', $data);
+  }
+
+  public function addEquipment() {
+    $params = request()->param();
+    $et_id = Db::table('equipments')->insertGetId([
+      'class_id' => $params['class_id'],
+      'et_name' => $params['et_name'],
+      'et_no' => $params['et_no'],
+      'et_status' => $params['et_status'],
+    ]);
+    $flag = Db::table('room_equipment')->insert([
+      'room_id' => $params['room_id'],
+      'equipment_id' => $et_id,
+    ]);
+    if ($flag) {
+      return $this->formatData('ok', null, '新增成功！');
+    } else {
+      return $this->formatData('error', null, '服务器错误，新增失败！');
+    }
+  }
+
+  public function deleteEquipment($et_id) {
+    $flag1 = Db::table('equipments')->where('id', $et_id)->delete();
+    $flag2 = Db::table('room_equipment')->where('equipment_id', $et_id)->delete();
+    if ($flag1 && $flag2) {
+      return $this->formatData('ok', null, '删除成功！');
+    } else {
+      return $this->formatData('error', null, '服务器错误，删除失败！');
+    }
   }
 
 }
