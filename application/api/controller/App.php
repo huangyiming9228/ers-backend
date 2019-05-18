@@ -97,4 +97,23 @@ class App extends Controller {
     }
   }
 
+  public function saveFaultcomplaint() {
+    $params = request()->param();
+    $image_list = json_decode($params['image_list']);
+    unset($params['image_list']);
+    $params['submit_time'] = date('Y-m-d H:i:s');
+    $faultcomplaint_id = Db::table('fault_complaint')->insertGetId($params);
+    if ($faultcomplaint_id) {
+      foreach($image_list as $key => $value) {
+        Db::table('faultcomplaint_image')->insert([
+          'faultcomplaint_id' => $faultcomplaint_id ,
+          'image_id' => $value
+        ]);
+      }
+      return $this->formatData('ok', null, '提交成功！');
+    } else {
+      return $this->formatData('error', null, '提交失败！');
+    }
+  }
+
 }
