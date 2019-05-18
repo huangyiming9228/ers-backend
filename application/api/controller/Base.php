@@ -29,6 +29,27 @@ class Base extends Controller {
     ]);
   }
 
+  // 保存图片，返回file_id
+  public function image_upload() {
+    $file = request()->file('image');
+    $ext_allow = 'jpg,gif,png,jpeg';
+    $save_path = IMAGE_PATH.date('Y-m').'/';
+    $info = $file->validate(['ext' => $ext_allow])->rule('uniqid')->move($save_path);
+    if ($info) {
+      $image_data = [
+        'save_path' => $save_path,
+        'file_name' => $info->getFilename(),
+        'create_time' => date('Y-m-d H:i:s'),
+        'is_used' => 0,
+      ];
+      $image_id = Db::table('image_list')->insertGetId($image_data);
+      return $this->formatData('ok', $image_id);
+    } else {
+      Log::record($file->getError());
+      return false;
+    }
+  }
+
   public function backLogin() {
     $user_no = request()->param('userName');
     $psw = request()->param('password');

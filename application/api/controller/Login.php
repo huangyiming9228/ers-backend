@@ -11,7 +11,6 @@ class Login extends Controller {
   private $default_time = 3600;
 
   public function login_check() {
-    // if (request()->isPost()) {
       $user_no = request()->param('user_no');
       $psw = request()->param('psw');
       if (empty($user_no) || empty($psw)) {
@@ -48,10 +47,16 @@ class Login extends Controller {
             if ($is_login_success) {
               $data = [
                 'data' => [
-                  'token' => $token
+                  'token' => $token,
+                  'user_name' => $user_info['user_name'],
+                  'user_no' => $user_info['user_no'],
+                  'auth' => $user_info['auth'],
+                  'auth_name' => $user_info['auth_name'],
+                  'tel' => $user_info['tel'],
+                  'email' => $user_info['email'],
                 ],
                 'message' => '登录成功！',
-                'status' => 'success'
+                'status' => 'ok'
               ];
               return json_encode($data);
             } else {
@@ -65,14 +70,6 @@ class Login extends Controller {
           }
         }
       }
-    // } else {
-    //   $data = [
-    //     'data' => null,
-    //     'message' => '请求方式不正确！',
-    //     'status' => 'error'
-    //   ];
-    //   return $data;
-    // }
   }
 
   protected function make_token(){
