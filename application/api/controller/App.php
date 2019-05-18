@@ -68,4 +68,33 @@ class App extends Controller {
     }
   }
 
+  public function getAllAreas() {
+    $data = Db::table('areas')->select();
+    return $this->formatData('ok', $data);
+  }
+
+  public function getAllRooms($id) {
+    $data = Db::table('rooms')->where('area_id', $id)->select();
+    return $this->formatData('ok', $data);
+  }
+
+  public function saveFoodcomplaint() {
+    $params = request()->param();
+    $image_list = json_decode($params['image_list']);
+    unset($params['image_list']);
+    $params['submit_time'] = date('Y-m-d H:i:s');
+    $foodcomplaint_id = Db::table('food_complaint')->insertGetId($params);
+    if ($foodcomplaint_id) {
+      foreach($image_list as $key => $value) {
+        Db::table('foodcomplaint_image')->insert([
+          'foodcomplaint_id' => $foodcomplaint_id ,
+          'image_id' => $value
+        ]);
+      }
+      return $this->formatData('ok', null, '提交成功！');
+    } else {
+      return $this->formatData('error', null, '提交失败！');
+    }
+  }
+
 }
