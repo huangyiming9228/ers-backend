@@ -134,10 +134,74 @@ class App extends Controller {
           'faulthanding_id' => $faulthanding_id,
           'fault_id' => $value
         ]);
-        return $this->formatData('ok', null, '提交成功！');
       }
+      return $this->formatData('ok', null, '提交成功！');
     } else {
       return $this->formatData('error', null, '服务器错误！');
+    }
+  }
+
+  public function getUsers() {
+    $data = Db::table('user')->select();
+    return $this->formatData('ok', $data);
+  }
+
+  public function saveTechhanding() {
+    $params = request()->param();
+    $fault_list = json_decode($params['fault_list']);
+    unset($params['fault_list']);
+    $params['submit_time'] = date('Y-m-d H:i:s');
+    $params['status'] = 0;
+    $techhanding_id = Db::table('techhanding_list')->insertGetId($params);
+    if ($techhanding_id) {
+      foreach ($fault_list as $key => $value) {
+        Db::table('techhanding_fault')->insert([
+          'techhanding_id' => $techhanding_id,
+          'fault_id' => $value
+        ]);
+      }
+      return $this->formatData('ok', null, '提交成功！');
+    } else {
+      return $this->formatData('error', null, '服务器错误！');
+    }
+  }
+
+  public function getFaultList() {
+    $params = request()->param();
+    $techhanding_list = [];
+    if ($params['auth'] == 'admin') {
+      $techhanding_list = Db::table('techhanding_list')->where('status', 0)->order('submit_time', 'desc')->select();
+    } else {
+      $techhanding_list = Db::table('techhanding_list')->where('status', 0)->where('user', $params['user_no'])->order('submit_time', 'desc')->select();
+    }
+    foreach ($techhanding_list as $key => $value) {
+      $techhanding_list[$key]['area_name'] = Db::table('areas')->where('id', $value['area_id'])->value('area_name');
+      $techhanding_list[$key]['room_name'] = Db::table('rooms')->where('id', $value['room_id'])->value('room_name');
+
+      // 获取设备信息
+      $equipment_info = Db::table('equipments')->where('id', $value['equipment_id'])->find();
+      $equipment_info['type'] = Db::table('equipment_class')->where('id', $equipment_info['class_id'])->value('equipment_name');
+      $techhanding_list[$key]['equipment_info'] = $equipment_info;
+
+      // 获取故障信息
+      $fault_list = Db::table('techhanding_fault')->where('techhanding_id', $value['id'])->select();
+      foreach ($fault_list as $sub_key => $sub_value) {
+        $fault_list[$sub_key]['fault_name'] = Db::table('faults_class')->where('id', $sub_value['fault_id'])->value('fault_name');
+      }
+      $techhanding_list[$key]['fault_list'] = $fault_list;
+    }
+    return $this->formatData('ok', $techhanding_list);
+  }
+
+  public function updateTechhanding($id) {
+    $flag = Db::table('techhanding_list')->where('id', $id)->update([
+      'complete_time' => date('Y-m-d H:i:s'),
+      'status' => 1
+    ]);
+    if ($flag) {
+      return $this->formatData('ok', null, '提交成功！');
+    } else {
+      return $this->formatData('error', null, '提交失败！');
     }
   }
 
