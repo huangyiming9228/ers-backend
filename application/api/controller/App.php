@@ -116,4 +116,29 @@ class App extends Controller {
     }
   }
 
+  public function getFaultClassList() {
+    $params = request()->param();
+    $data = Db::table('faults_class')->where('class_id', $params['class_id'])->select();
+    return $this->formatData('ok', $data);
+  }
+
+  public function saveFaulthanding() {
+    $params = request()->param();
+    $fault_list = json_decode($params['fault_list']);
+    unset($params['fault_list']);
+    $params['submit_time'] = date('Y-m-d H:i:s');
+    $faulthanding_id = Db::table('faulthanding_list')->insertGetId($params);
+    if ($faulthanding_id) {
+      foreach ($fault_list as $key => $value) {
+        Db::table('equipment_fault')->insert([
+          'faulthanding_id' => $faulthanding_id,
+          'fault_id' => $value
+        ]);
+        return $this->formatData('ok', null, '提交成功！');
+      }
+    } else {
+      return $this->formatData('error', null, '服务器错误！');
+    }
+  }
+
 }
