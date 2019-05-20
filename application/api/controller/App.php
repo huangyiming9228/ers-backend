@@ -233,7 +233,36 @@ class App extends Controller {
     } else {
       return $this->formatData('error', null, '服务器错误！');
     }
-    return $this->formatData('ok', null, '提交成功！');
+  }
+
+  public function getWarehouseAreaList() {
+    $params = request()->param();
+    $data = Db::table('warehouse_areas')->select();
+    return $this->formatData('ok', $data);
+  }
+
+  public function getWarehouseRoomList($id) {
+    $data = Db::table('warehouse_rooms')->where('area_id', $id)->select();
+    return $this->formatData('ok', $data);
+  }
+
+  public function saveWarehouseCheck() {
+    $params = request()->param();
+    $image_list = json_decode($params['image_list']);
+    unset($params['image_list']);
+    $params['submit_time'] = date('Y-m-d H:i:s');
+    $warehouse_id = Db::table('warehouse_list')->insertGetId($params);
+    if ($warehouse_id) {
+      foreach($image_list as $key => $value) {
+        Db::table('warehouse_image')->insert([
+          'warehouse_id' => $warehouse_id ,
+          'image_id' => $value
+        ]);
+      }
+      return $this->formatData('ok', null, '提交成功！');
+    } else {
+      return $this->formatData('error', null, '服务器错误！');
+    }
   }
 
 }
