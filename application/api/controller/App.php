@@ -205,4 +205,35 @@ class App extends Controller {
     }
   }
 
+  public function getMachineAreaList() {
+    $params = request()->param();
+    $data = Db::table('machine_areas')->select();
+    return $this->formatData('ok', $data);
+  }
+
+  public function getMachineRoomList($id) {
+    $data = Db::table('machine_rooms')->where('area_id', $id)->select();
+    return $this->formatData('ok', $data);
+  }
+
+  public function saveMachineCheck() {
+    $params = request()->param();
+    $image_list = json_decode($params['image_list']);
+    unset($params['image_list']);
+    $params['submit_time'] = date('Y-m-d H:i:s');
+    $machine_id = Db::table('machine_list')->insertGetId($params);
+    if ($machine_id) {
+      foreach($image_list as $key => $value) {
+        Db::table('machine_image')->insert([
+          'machine_id' => $machine_id ,
+          'image_id' => $value
+        ]);
+      }
+      return $this->formatData('ok', null, '提交成功！');
+    } else {
+      return $this->formatData('error', null, '服务器错误！');
+    }
+    return $this->formatData('ok', null, '提交成功！');
+  }
+
 }
