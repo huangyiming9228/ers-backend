@@ -13,3 +13,5 @@
 
 // 定义图片上传路径
 define('IMAGE_PATH', './upload/images/');
+// 定义网站路径
+define('SITE_URL', 'http://localhost/ers/');

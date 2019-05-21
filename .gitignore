@@ -3,3 +3,4 @@ composer.lock
 *.log
 upload/
 runtime/
+public/upload
