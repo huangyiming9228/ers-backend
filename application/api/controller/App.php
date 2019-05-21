@@ -22,13 +22,25 @@ class App extends Controller {
 
   public function getAreas() {
     $params = request()->param();
-    $data = Db::table('areas')->select();
+    if ($params['auth'] == 'room_admin') {
+      $all_area_id = Db::table('rooms')->where('user_no', $params['user_no'])->column('area_id');
+      array_unique($all_area_id);
+      $data = Db::table('areas')->where('id', 'in', $all_area_id)->select();
+    } else if ($params['auth'] == 'area_admin') {
+      $data = Db::table('areas')->where('user_no', $params['user_no'])->select();
+    } else {
+      $data = Db::table('areas')->select();
+    }
     return $this->formatData('ok', $data);
   }
 
   public function getRooms() {
     $params = request()->param();
-    $data = Db::table('rooms')->where('area_id', $params['id'])->select();
+    if ($params['auth'] == 'room_admin') {
+      $data = Db::table('rooms')->where('area_id', $params['id'])->where('user_no', $params['user_no'])->select();
+    } else {
+      $data = Db::table('rooms')->where('area_id', $params['id'])->select();
+    }
     return $this->formatData('ok', $data);
   }
 
