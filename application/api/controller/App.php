@@ -265,4 +265,34 @@ class App extends Controller {
     }
   }
 
+  public function getUpsAreaList() {
+    $params = request()->param();
+    $data = Db::table('ups_areas')->select();
+    return $this->formatData('ok', $data);
+  }
+
+  public function getUpsRoomList($id) {
+    $data = Db::table('ups_rooms')->where('area_id', $id)->select();
+    return $this->formatData('ok', $data);
+  }
+
+  public function saveUpsCheck() {
+    $params = request()->param();
+    $image_list = json_decode($params['image_list']);
+    unset($params['image_list']);
+    $params['submit_time'] = date('Y-m-d H:i:s');
+    $ups_id = Db::table('ups_list')->insertGetId($params);
+    if ($ups_id) {
+      foreach($image_list as $key => $value) {
+        Db::table('ups_image')->insert([
+          'ups_id' => $ups_id ,
+          'image_id' => $value
+        ]);
+      }
+      return $this->formatData('ok', null, '提交成功！');
+    } else {
+      return $this->formatData('error', null, '服务器错误！');
+    }
+  }
+
 }
