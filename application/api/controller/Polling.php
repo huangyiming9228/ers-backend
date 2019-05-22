@@ -250,4 +250,116 @@ class Polling extends Controller {
     return $this->formatData('ok', $data);
   }
 
+  public function getWarehouseAreas() {
+    $data = Db::table('warehouse_areas')->select();
+    foreach ($data as $key => $value) {
+      $data[$key]['user_name'] = Db::table('user')->where('user_no', $value['user_no'])->value('user_name');
+      $data[$key]['room_count'] = Db::table('warehouse_rooms')->where('area_id', $value['id'])->count();
+    }
+    return $this->formatData('ok', $data);
+  }
+
+  public function updateWarehouseAreaUser() {
+    $params = request()->param();
+    $rooms = $params['keys'];
+    $user_no = $params['user_no'];
+    foreach ($rooms as $key => $value) {
+      Db::table('warehouse_areas')->where('id', $value)->update(['user_no' => $user_no]);
+    }
+    return $this->formatData('ok', null);
+  }
+
+  public function addWarehouseArea() {
+    $params = request()->param();
+    $is_exist = Db::table('warehouse_areas')->where('area_name', $params['area_name'])->find();
+    if ($is_exist) {
+      return $this->formatData('error', null, '新增失败，已存在相同名称的区域！');
+    } else {
+      $flag = Db::table('warehouse_areas')->insert([
+        'area_name' => $params['area_name'],
+        'user_no' => $params['user_no'],
+      ]);
+      if ($flag) {
+        return $this->formatData('ok', null, '新增成功！');
+      } else {
+        return $this->formatData('error', null, '新增失败！');
+      }
+    }
+  }
+
+  public function deleteWarehouseArea($area_id) {
+    $flag = Db::table('warehouse_areas')->where('id', $area_id)->delete();
+    if ($flag) {
+      return $this->formatData('ok', null, '删除成功！');
+    } else {
+      return $this->formatData('error', null, '删除失败！');
+    }
+  }
+
+  public function getWarehouseRooms($id) {
+    $data = Db::table('warehouse_rooms')->where('area_id', $id)->select();
+    foreach ($data as $key => $value) {
+      $data[$key]['user_name'] = Db::table('user')->where('user_no', $value['user_no'])->value('user_name');
+    }
+    return $this->formatData('ok', $data);
+  }
+
+  public function updateWarehouseRoomUser() {
+    $params = request()->param();
+    $rooms = $params['keys'];
+    $user_no = $params['user_no'];
+    foreach ($rooms as $key => $value) {
+      Db::table('warehouse_rooms')->where('id', $value)->update(['user_no' => $user_no]);
+    }
+    return $this->formatData('ok', null);
+  }
+
+  public function addWarehouseRoom() {
+    $params = request()->param();
+    $is_exist = Db::table('warehouse_rooms')->where('area_id', $params['area_id'])->where('room_name', $params['room_name'])->find();
+    if ($is_exist) {
+      return $this->formatData('error', null, '新增失败，此区域已存在相同名称的教室！');
+    } else {
+      $flag = Db::table('warehouse_rooms')->insert([
+        'room_name' => $params['room_name'],
+        'area_id' => $params['area_id'],
+        'user_no' => $params['user_no'],
+      ]);
+      if ($flag) {
+        return $this->formatData('ok', null, '新增成功！');
+      } else {
+        return $this->formatData('error', null, '新增失败！');
+      }
+    }
+  }
+
+  public function deleteWarehouseRoom($room_id) {
+    $flag = Db::table('warehouse_rooms')->where('id', $room_id)->delete();
+    if ($flag) {
+      return $this->formatData('ok', null, '删除成功！');
+    } else {
+      return $this->formatData('error', null, '删除失败！');
+    }
+  }
+
+  public function getWarehouseCheckList() {
+    $params = request()->param();
+    $conditions = [];
+    if ($params['area_id']) $conditions['area_id']  = $params['area_id'];
+    if ($params['room_id']) $conditions['room_id']  = $params['room_id'];
+    if ($params['start_time'] && $params['end_time']) {
+      $conditions['submit_time']  = ['between', [$params['start_time'], $params['end_time']]];
+    }
+    $data = Db::table('warehouse_list')->where($conditions)->order('submit_time', 'desc')->select();
+    foreach ($data as $key => $value) {
+      // 获取图片
+      $image_list = Db::table('warehouse_image')->where('warehouse_id', $value['id'])->select();
+      foreach ($image_list as $sub_key => $sub_value) {
+        $image_list[$sub_key]['image_url'] = $this->getImageUrl($sub_value['image_id']);
+      }
+      $data[$key]['image_list'] = $image_list;
+    }
+    return $this->formatData('ok', $data);
+  }
+
 }
